@@ -1,4 +1,3 @@
-#define HAVE_FREEBSD_NATT 1
 /*	$OpenBSD: pfkey.c,v 1.22 2013/01/08 10:38:19 reyk Exp $	*/
 
 /*

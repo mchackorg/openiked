@@ -260,6 +260,7 @@ main() { if (NSVersionOfRunTimeLibrary("System") >= (60 << 16))
 	;;
 *-*-freebsd*)
 	check_for_libcrypt_later=1
+	AC_DEFINE([HAVE_FREEBSD_NATT], [1], [Use FreeBSD's NAT-T support])
 	;;
 *-*-openbsd*)
 	echo "Please use -current"
