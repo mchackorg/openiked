@@ -1,3 +1,4 @@
+#define HAVE_FREEBSD_NATT 1
 /*	$OpenBSD: pfkey.c,v 1.22 2013/01/08 10:38:19 reyk Exp $	*/
 
 /*
@@ -29,6 +30,8 @@
 #if defined(__OpenBSD__)
 #include <netinet/ip_ipsp.h>
 #include <net/pfkeyv2.h>
+#elif defined(HAVE_FREEBSD_NATT)
+#include <netinet/udp.h>
 #endif
 
 #include <err.h>
@@ -657,6 +660,9 @@ pfkey_sa(int sd, u_int8_t satype, u_int8_t action, struct iked_childsa *sa)
 #if defined(HAVE_APPLE_NATT)
 	struct sadb_sa_natt	 natt;
 #endif
+#if defined(HAVE_FREEBSD_NATT)
+        struct sadb_x_nat_t_type nat_type;
+#endif	
 #endif
 	struct sockaddr_storage	 ssrc, sdst;
 	struct sadb_ident	*sa_srcid, *sa_dstid;
@@ -731,6 +737,8 @@ pfkey_sa(int sd, u_int8_t satype, u_int8_t action, struct iked_childsa *sa)
 	bzero(&udpencap, sizeof udpencap);
 #elif defined(HAVE_APPLE_NATT)
 	bzero(&natt, sizeof(natt));
+#elif defined(HAVE_FREEBSD_NATT)
+        bzero(&nat_type, sizeof(nat_type));
 #endif
 	bzero(&sa_ltime_hard, sizeof(sa_ltime_hard));
 	bzero(&sa_ltime_soft, sizeof(sa_ltime_soft));
@@ -784,6 +792,10 @@ pfkey_sa(int sd, u_int8_t satype, u_int8_t action, struct iked_childsa *sa)
 			sadb.sadb_sa_flags |= SADB_X_EXT_NATT_DETECTED_PEER;
 		natt.sadb_sa_natt_port =
 		    ntohs(sa->csa_ikesa->sa_peer.addr_port);
+#elif defined(HAVE_FREEBSD_NATT)
+		nat_type.sadb_x_nat_t_type_exttype = SADB_X_EXT_NAT_T_TYPE;
+		nat_type.sadb_x_nat_t_type_len = sizeof(nat_type) / 8;
+		nat_type.sadb_x_nat_t_type_type = UDP_ENCAP_ESPINUDP;
 #else
 #warning PFKEYv2 NAT-T not supported
 #endif
@@ -919,6 +931,15 @@ pfkey_sa(int sd, u_int8_t satype, u_int8_t action, struct iked_childsa *sa)
 		iov[iov_cnt].iov_base = &udpencap;
 		iov[iov_cnt].iov_len = sizeof(udpencap);
 		smsg.sadb_msg_len += udpencap.sadb_x_udpencap_len;
+		iov_cnt++;
+	}
+#endif
+
+#if defined(HAVE_FREEBSD_NATT)
+	if (nat_type.sadb_x_nat_t_type_len) {
+		iov[iov_cnt].iov_base = &nat_type;
+		iov[iov_cnt].iov_len = sizeof(nat_type);
+		smsg.sadb_msg_len += nat_type.sadb_x_nat_t_type_len;
 		iov_cnt++;
 	}
 #endif
