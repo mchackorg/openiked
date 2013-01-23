@@ -661,6 +661,8 @@ pfkey_sa(int sd, u_int8_t satype, u_int8_t action, struct iked_childsa *sa)
 #endif
 #if defined(HAVE_FREEBSD_NATT)
         struct sadb_x_nat_t_type nat_type;
+        struct sadb_x_nat_t_port nat_port_src;
+        struct sadb_x_nat_t_port nat_port_dst;
 #endif	
 #endif
 	struct sockaddr_storage	 ssrc, sdst;
@@ -737,7 +739,9 @@ pfkey_sa(int sd, u_int8_t satype, u_int8_t action, struct iked_childsa *sa)
 #elif defined(HAVE_APPLE_NATT)
 	bzero(&natt, sizeof(natt));
 #elif defined(HAVE_FREEBSD_NATT)
-        bzero(&nat_type, sizeof(nat_type));
+	bzero(&nat_type, sizeof(nat_type));
+	bzero(&nat_port_src, sizeof(nat_port_src));
+	bzero(&nat_port_dst, sizeof(nat_port_dst));
 #endif
 	bzero(&sa_ltime_hard, sizeof(sa_ltime_hard));
 	bzero(&sa_ltime_soft, sizeof(sa_ltime_soft));
@@ -795,6 +799,19 @@ pfkey_sa(int sd, u_int8_t satype, u_int8_t action, struct iked_childsa *sa)
 		nat_type.sadb_x_nat_t_type_exttype = SADB_X_EXT_NAT_T_TYPE;
 		nat_type.sadb_x_nat_t_type_len = sizeof(nat_type) / 8;
 		nat_type.sadb_x_nat_t_type_type = UDP_ENCAP_ESPINUDP;
+
+		nat_port_src.sadb_x_nat_t_port_exttype
+			= SADB_X_EXT_NAT_T_SPORT;
+		nat_port_src.sadb_x_nat_t_port_len
+			= PFKEY_UNIT64(sizeof(nat_port_src));
+		nat_port_src.sadb_x_nat_t_port_port = htons(4500);
+
+		nat_port_dst.sadb_x_nat_t_port_exttype
+			= SADB_X_EXT_NAT_T_DPORT;
+		nat_port_dst.sadb_x_nat_t_port_len
+			= PFKEY_UNIT64(sizeof(nat_port_dst));
+		nat_port_dst.sadb_x_nat_t_port_port 
+			= sa->csa_ikesa->sa_peer.addr_port;
 #else
 #warning PFKEYv2 NAT-T not supported
 #endif
@@ -939,6 +956,16 @@ pfkey_sa(int sd, u_int8_t satype, u_int8_t action, struct iked_childsa *sa)
 		iov[iov_cnt].iov_base = &nat_type;
 		iov[iov_cnt].iov_len = sizeof(nat_type);
 		smsg.sadb_msg_len += nat_type.sadb_x_nat_t_type_len;
+		iov_cnt++;
+
+		iov[iov_cnt].iov_base = &nat_port_src;
+		iov[iov_cnt].iov_len = sizeof(nat_port_src);
+		smsg.sadb_msg_len += nat_port_src.sadb_x_nat_t_port_len;
+		iov_cnt++;
+
+		iov[iov_cnt].iov_base = &nat_port_dst;
+		iov[iov_cnt].iov_len = sizeof(nat_port_dst);
+		smsg.sadb_msg_len += nat_port_dst.sadb_x_nat_t_port_len;
 		iov_cnt++;
 	}
 #endif
