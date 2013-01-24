@@ -803,13 +803,13 @@ pfkey_sa(int sd, u_int8_t satype, u_int8_t action, struct iked_childsa *sa)
 		nat_port_src.sadb_x_nat_t_port_exttype
 			= SADB_X_EXT_NAT_T_SPORT;
 		nat_port_src.sadb_x_nat_t_port_len
-			= PFKEY_UNIT64(sizeof(nat_port_src));
+			= sizeof(nat_port_src) / 8;
 		nat_port_src.sadb_x_nat_t_port_port = htons(4500);
 
 		nat_port_dst.sadb_x_nat_t_port_exttype
 			= SADB_X_EXT_NAT_T_DPORT;
 		nat_port_dst.sadb_x_nat_t_port_len
-			= PFKEY_UNIT64(sizeof(nat_port_dst));
+			= sizeof(nat_port_dst) / 8;
 		nat_port_dst.sadb_x_nat_t_port_port 
 			= sa->csa_ikesa->sa_peer.addr_port;
 #else
